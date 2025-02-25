@@ -1,10 +1,21 @@
 --[[
 
+  ██╗  ██╗███████╗██╗     ██╗      ██████╗  ██████╗  ██████╗
+  ██║  ██║██╔════╝██║     ██║     ██╔═══██╗██╔═══██
+
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
 ========                                    .-----.          ========
 ========         .----------------------.   | === |          ========
+========         |.-""""""""""""""""""-.|   |-----.          ========
+========         ||                    ||   |:::::|          ========
+========         ||                    ||   |:::::|          ========
+========         |'-..................-'|   |:::::|          ========
+========         `"")----------------(""`   |_____|          ========
+========        /::::::::::|  |::::::::::\                   ========
+========       /:::======= |  | =========:\                  ========
+========      '
 ========         |.-""""""""""""""""""-.|   |-----|          ========
 ========         ||                    ||   | === |          ========
 ========         ||   KICKSTART.NVIM   ||   |-----|          ========
@@ -91,7 +102,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -99,10 +110,9 @@ vim.g.have_nerd_font = false
 --  For more options, you can see `:help option-list`
 
 -- Make line numbers default
-vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -628,6 +638,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        ansiblels = {},
 
         lua_ls = {
           -- cmd = { ... },
@@ -710,6 +721,8 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        yaml = { 'ansible-lint' },
+        ['yaml.ansible'] = { 'ansible-lint' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -726,25 +739,8 @@ require('lazy').setup({
       -- Snippet Engine & its associated nvim-cmp source
       {
         'L3MON4D3/LuaSnip',
-        build = (function()
-          -- Build Step is needed for regex support in snippets.
-          -- This step is not supported in many windows environments.
-          -- Remove the below condition to re-enable on windows.
-          if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then
-            return
-          end
-          return 'make install_jsregexp'
-        end)(),
         dependencies = {
-          -- `friendly-snippets` contains a variety of premade snippets.
-          --    See the README about individual language/framework/plugin snippets:
-          --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          'rafamadriz/friendly-snippets',
         },
       },
       'saadparwaiz1/cmp_luasnip',
@@ -756,6 +752,8 @@ require('lazy').setup({
       'hrsh7th/cmp-path',
     },
     config = function()
+      -- Load friendly snippets
+      require('luasnip.loaders.from_vscode').lazy_load()
       -- See `:help cmp`
       local cmp = require 'cmp'
       local luasnip = require 'luasnip'
@@ -840,21 +838,20 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    'RRethy/base16-nvim',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     init = function()
       -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'base16-black-metal'
+      vim.o.termguicolors = true
 
       -- You can configure highlights by doing something like:
-      vim.cmd.hi 'Comment gui=none'
+      -- vim.cmd.hi 'Comment gui=none'
     end,
   },
 
   -- Highlight todo, notes, etc in comments
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  --  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -899,15 +896,16 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'yaml' },
       -- Autoinstall languages that are not installed
+      sync_install = true,
       auto_install = true,
       highlight = {
         enable = true,
         -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
         --  If you are experiencing weird indenting issues, add the language to
         --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
+        additional_vim_regex_highlighting = { 'ruby', 'yaml.ansible', 'jinja2' },
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
@@ -918,7 +916,19 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-
+  {
+    'github/copilot.vim',
+    event = 'InsertEnter',
+    config = function()
+      vim.g.copilot_no_tab_map = true
+      vim.g.copilot_assume_mapped = true
+      vim.api.nvim_set_keymap('i', '<C-J>', 'copilot#Accept("<CR>")', {
+        expr = true,
+        silent = true,
+        replace_keycodes = false,
+      })
+    end,
+  },
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -947,25 +957,69 @@ require('lazy').setup({
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, {
   ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
-    -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = vim.g.have_nerd_font and {} or {
+    icons = { -- Remove the conditional check
       cmd = '⌘',
-      config = '🛠',
+      config = '⚙',
       event = '📅',
       ft = '📂',
-      init = '⚙',
-      keys = '🗝',
+      init = '⚡',
+      keys = '🔑',
       plugin = '🔌',
       runtime = '💻',
-      require = '🌙',
+      require = '📦',
       source = '📄',
       start = '🚀',
       task = '📌',
-      lazy = '💤 ',
+      lazy = '💤',
     },
   },
 })
+-- Ansible filetype detection
+vim.api.nvim_create_autocmd({ 'BufNewFile', 'BufRead' }, {
+  pattern = {
+    '**/playbooks/*.yml',
+    '**/roles/*.yml',
+    '**/tasks/*.yml',
+    '**/handlers/*.yml',
+    '**/group_vars/*.yml',
+    '**/host_vars/*.yml',
+    '**/defaults/*.yml',
+    '**/vars/*.yml',
+    '*.yml.j2',
+    '*.yaml.j2',
+    '*.j2.yml',
+    '*.j2.yaml',
+    '*.j2',
+  },
+  callback = function()
+    vim.opt_local.filetype = 'yaml.ansible'
+    vim.opt_local.syntax = 'jinja2'
+  end,
+})
+-- Ensure Unix line endings on file read
+vim.api.nvim_create_autocmd('BufReadPre', {
+  pattern = '*',
+  command = 'setlocal fileformat=unix',
+})
+
+local clip = '/mnt/c/Windows/System32/clip.exe'
+
+-- Check if clip.exe is available
+if vim.fn.executable(clip) == 1 then
+  vim.api.nvim_create_augroup('WSLYank', { clear = true })
+
+  vim.api.nvim_create_autocmd('TextYankPost', {
+    group = 'WSLYank',
+    pattern = '*',
+    callback = function()
+      if vim.v.event.operator == 'y' then
+        local yank_content = vim.fn.getreg '"'
+        -- Don't convert line endings, just send as-is
+        vim.fn.system(clip, yank_content)
+      end
+    end,
+  })
+end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
